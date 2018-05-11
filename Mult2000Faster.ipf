@@ -1,8 +1,9 @@
 #pragma TextEncoding = "Windows-1252"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #include <FilterDialog> menus=0
+#include "gpibcom"
+//#include "mainIIIV_v3.1c"
 
-//We need gpibcom.ipf and MainIIIV_v3.1.ipf. 
 Menu "Multi2000"
 	"Initialize", Init_Multi2000()
 	"Clear", Close_Multi2000()
@@ -529,10 +530,14 @@ Function CheckProc_Mult2000(cba) : CheckBoxControl
 				case "checkfast":
 					nvar /z fast = root:DeviceControl:Mult2000:Measure:fast
 					nvar /z num = root:DeviceControl:Mult2000:Measure:num
+					nvar /z nplc = root:DeviceControl:Mult2000:Measure:nplc
 					fast = cba.checked
 					if (fast) 
 						SetVariable setvarNum, disable = 2
 						num = 1
+						if (nplc > 3 )
+							nplc = 3
+						endif
 					elseif (fast == 0)
 						SetVariable setvarNum, disable = 0
 					endif
@@ -557,9 +562,12 @@ Function SetVarProc_Mult2000(sva) : SetVariableControl
 		case 2: // Enter key
 		case 8:	//The edit ends for num or nplc
 		//Those 3 cases are important, we have the blockreentry to ensure not doing this twice
-			nvar /z mode = root:DeviceControl:Mult2000:Measure:mode
-			nvar /z nplc = root:DeviceControl:Mult2000:Measure:nplc
-			PrepareFaster(mode, nplc)
+			nvar /z fast = root:DeviceControl:Mult2000:Measure:fast
+			if (fast)
+				nvar /z mode = root:DeviceControl:Mult2000:Measure:mode
+				nvar /z nplc = root:DeviceControl:Mult2000:Measure:nplc
+				PrepareFaster(mode, nplc)
+			endif
 			//we need to prepare the measurings becouse it is so fast that gives error if we do not do this. 
 			break
 		case -1: // control being killed
