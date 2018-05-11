@@ -6,7 +6,7 @@
 Menu "Multi2000"
 	"Initialize", Init_Multi2000()
 	"Clear", Close_Multi2000()
-	"Panel/ç", Mult2000Panel ()
+	"Panel/ç",/Q, Mult2000Panel ()
 	End
 	
 End
