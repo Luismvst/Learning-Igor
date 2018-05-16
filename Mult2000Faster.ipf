@@ -2,11 +2,7 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #include <FilterDialog> menus=0
 #include "gpibcom"
-<<<<<<< HEAD
 //#include "mainIIIV_v3.1c"
-=======
-
->>>>>>> Mult2000Faster
 
 Menu "Multi2000"
 	"Initialize", Init_Multi2000()
