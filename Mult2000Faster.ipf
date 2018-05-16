@@ -2,11 +2,15 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #include <FilterDialog> menus=0
 #include "gpibcom"
+<<<<<<< HEAD
+=======
+//#include "mainIIIV_v3.1c"
+>>>>>>> Mult2000Faster
 
 Menu "Multi2000"
 	"Initialize", Init_Multi2000()
 	"Clear", Close_Multi2000()
-	"Panel/ç", Mult2000Panel ()
+	"Panel/ç",/Q, Mult2000Panel ()
 	End
 	
 End
@@ -18,13 +22,13 @@ End
 //con nplc = 5, 		tarda 7 		segundos en realizar la medida
 //con nplc = 10, 	tarda 12 		segundos en realizar la medida
 
-//STATS - 1 voltage measurement -> the best way to take a  fast measure
+//STATS - 1 voltage measurement -> the best way to take a fast measure
 //con nplc = 0.01,	tarda 0.20 	segundos en realizar la medida
 //con nplc = 0.1, 	tarda 0.16 	segundos en realizar la medida
 //con nplc = 1, 		tarda 0.08 	segundos en realizar la medida
 //con nplc = 2,		tarda 0.18 	segundos en realizar la medida
 //con nplc = 3, 		tarda 0.24 	segundos en realizar la medida
-//NPLC CAN NOT BE MORE THAN 3 IN FASTER MODE. IT WONT BE A FAST MEASUREMENT, AND THERE WILL BE ERRORS BECOUSE IT IS TOO SLOW. 
+//NPLC CAN NOT BE MORE THAN 3 IN FASTER MODE. (NPLC<=3) IT WONT BE A FAST MEASUREMENT, AND THERE WILL BE ERRORS BECOUSE IT IS TOO SLOW. 
 //USE NORMAL MEASURING IF YOU WANT TO USE NPLC > 3
 //Values given by Medir() are on S.I. ( International System of units )
 
@@ -44,13 +48,13 @@ end
 
 //Instructions to use Faster() and PrepareFaster()
 
-//Prepare Faster(mode, nplc) 	is used to specify the INITIAL MODE, or if there has been CHANGES in NPLC. 
+//Prepare Faster(mode, nplc) 	is used to specify the INITIAL MODE (before measuring, once is enough), or if there has been CHANGES in NPLC. 
 //	If we want Faster() Function to be fast, the mode and nplc should have the same values among the different measurments
-// If you want to change this values, use PrepareFaster() before Faster() to give the multimeter the time to change, and then use
-// Faster() to take the measurements.
+// If you want to change this values, use PrepareFaster() before Faster() to give the multimeter the time to change its configuration,
+// and then use Faster() to take the measurements.
 
 //Faster(nplc) is to MEASURE faster than Measure_Multi2000 ([ ... ])
-// If you are using always the same characteristics ( same nplc and faster() ) , you do not have to use preparefaster().
+// If you are using always the same characteristics ( same nplc and faster() ) , you don't have to use Preparefaster().
 // Faster() already works, but the first iteration he has to change the mode and nplc for example, so the first measure
 // will be a bit slow  compared to the rest
 
@@ -111,7 +115,7 @@ Function Measure_MultiK2000( [mode, num, nplc, range, triggertime, saved] )
 		
 	code1(type, num, nplc, range)
 	
-	//We have to wait for a short time to let keithley run the code and measure before asking him again
+	//We have to wait for a short time to let Keithley run the code and measure before asking him again
 	variable sleepy 
 	//This algorithm could be better implemented for the different measurings, but this is faster enough.
 	//The way to improve the measurings with more speed is to chronometer the time manually the keithley is  
@@ -129,7 +133,7 @@ Function Measure_MultiK2000( [mode, num, nplc, range, triggertime, saved] )
 	endif
 	
 	//We wait until the commands has been executed, and we are having an answer from keithley	
-	Sleep/S sleepy	//MUY IMPORTANTE	
+	Sleep/S sleepy	//VERY IMPORTANT	
 	
 	//If THIS Sleep is not bigger enough, the multimeter probably will not probably have enough time to take all the 
 	//measurings and it won't be good. "SRQ" instruction will be shown on keitley's screen if sleepy problem occurs
@@ -140,16 +144,12 @@ Function Measure_MultiK2000( [mode, num, nplc, range, triggertime, saved] )
 	
 	variable average_1 = Asking()
 	
-//	variable finish = stopmstimer(-2) - start
-//	finish = finish/(10^6)
-//	printf "Tiempo: %.8f\n\r", finish
 	if (saved)
 		wave buffer 
 		Save_Data(buffer)
 		variable /G root:DeviceControl:Mult2000:average = average_1
 	endif
 	
-	//print average
 	return average_1
 	
 	SetDataFolder saveDFR
@@ -182,23 +182,12 @@ Function Asking()
 	
 	Read_Data(points, buffer)									//Read the buffer 
 	
-	//printf "Vamos a imprimir %d puntos: \r", points
-//	variable i
-//	for  (i = 0; i<points; i+=1)
-//		if ( mod (i, 10) == 0 )	//for each 10 points printed, we change line on history command line
-//			print " "
-//		endif
-//		printf "%.8f     ", buffer[i]	
-//	endfor	
+	//Print_Data(points, buffer)
 	
 	WaveStats/M=2/Q	buffer		// M=2 is for V_sdev and V_avg
-	
 	variable media = V_avg
 	variable desv_tipica = V_sdev
 	
-//	print "WaveStats"
-//	printf "Media : %.8f \r", media
-//	printf "Desviación Típica : %.8f \r", desv_tipica
 	return media
 	
 end
@@ -212,6 +201,19 @@ Function Read_Data (points, buffer)
 		buffer[i] = Listen_Variable()
 	endfor
 end
+
+Function Print_Data(points, buffer)
+	variable points
+	wave buffer
+	printf "Let's print %d data: \r", points
+	variable i
+	for  (i = 0; i<points; i+=1)
+		if ( mod (i, 10) == 0 )	//for each 10 points printed, we change line on history command line
+			print " "
+		endif
+		printf "%.8f     ", buffer[i]	
+	endfor	
+End
 
 Function code1 (type, num, nplc, range)
 	
@@ -263,7 +265,7 @@ end
 //Not implemented yet. Coming soon
 Function Save_Data (buffer)
 
-	//This saves the buffer into datos wave, but it will ask you if you want to change the name and export it 
+	//This saves the buffer into data wave. You can change the wave's name 
 	wave buffer
 	DFRef saveDFR=GetDataFolderDFR()	
 	string path = "root:DeviceControl:Mult2000:"
@@ -295,7 +297,7 @@ Function/S Listen_String ()
 	return b
 end
 
-//Function to simplify on command Window
+//Function to simplify writing on command Windo. It also prints the solution
 function ls ()
 	variable a= listen_variable()
 	print a
@@ -329,8 +331,6 @@ Function Init_Multi2000()
 	DFRef dfr = $path
 	
 	SetDatafolder dfr
-	
-	//Variable KBoltzmann=8.6173324e-5
 	
 	InitBoard_GPIB(0)
 	
@@ -398,7 +398,6 @@ end
 
 
 Function Mult2000Panel ()
-	
 	//Initialize data
 	DFRef saveDFR=GetDataFolderDFR()
 	string path = "root:DeviceControl:Mult2000:Measure"
@@ -466,14 +465,16 @@ Function ButtonProc_Mult2000(ba) : ButtonControl
 					nvar /z fast = root:DeviceControl:Mult2000:Measure:fast
 					variable start, finish
 					if (fast || num == 1)
-						start = stopmstimer (-2)
-						print Faster (mode, nplc)
-						finish = stopmstimer(-2) - start
-						finish = finish/(10^6)
-						printf "Tiempo: %.8f\n\r", finish
+//						start = stopmstimer (-2)
+//						print Faster (mode, nplc)
+//						finish = stopmstimer(-2) - start
+//						finish = finish/(10^6)
+//						printf "Tiempo: %.8f\n\r", finish
+					 	return Faster (mode, nplc)
 					else
 //						start = stopmstimer (-2)
-						print Measure_MultiK2000( mode=mode, num=num, nplc=nplc, saved=saved )
+//						print Measure_MultiK2000( mode=mode, num=num, nplc=nplc, saved=saved )
+						Measure_MultiK2000( mode=mode, num=num, nplc=nplc, saved=saved )
 //						finish = stopmstimer(-2) - start
 //						finish = finish/(10^6)
 //						printf "Tiempo: %.8f\n\r", finish
@@ -532,10 +533,14 @@ Function CheckProc_Mult2000(cba) : CheckBoxControl
 				case "checkfast":
 					nvar /z fast = root:DeviceControl:Mult2000:Measure:fast
 					nvar /z num = root:DeviceControl:Mult2000:Measure:num
+					nvar /z nplc = root:DeviceControl:Mult2000:Measure:nplc
 					fast = cba.checked
 					if (fast) 
 						SetVariable setvarNum, disable = 2
 						num = 1
+						if (nplc > 3 )
+							nplc = 3
+						endif
 					elseif (fast == 0)
 						SetVariable setvarNum, disable = 0
 					endif
@@ -560,9 +565,12 @@ Function SetVarProc_Mult2000(sva) : SetVariableControl
 		case 2: // Enter key
 		case 8:	//The edit ends for num or nplc
 		//Those 3 cases are important, we have the blockreentry to ensure not doing this twice
-			nvar /z mode = root:DeviceControl:Mult2000:Measure:mode
-			nvar /z nplc = root:DeviceControl:Mult2000:Measure:nplc
-			PrepareFaster(mode, nplc)
+			nvar /z fast = root:DeviceControl:Mult2000:Measure:fast
+			if (fast)
+				nvar /z mode = root:DeviceControl:Mult2000:Measure:mode
+				nvar /z nplc = root:DeviceControl:Mult2000:Measure:nplc
+				PrepareFaster(mode, nplc)
+			endif
 			//we need to prepare the measurings becouse it is so fast that gives error if we do not do this. 
 			break
 		case -1: // control being killed
@@ -572,7 +580,7 @@ Function SetVarProc_Mult2000(sva) : SetVariableControl
 	endif
 End
 
-//MAX NPLC = 3 -> If you do not want error, the code is faster enough been under a nplc < 3
+//MAX NPLC = 3 -> If you do not want errors, the code is faster enough been under a nplc < 3
 Function Faster (mode, nplc)
 	variable mode, nplc
 	string type
@@ -589,12 +597,12 @@ Function Faster (mode, nplc)
 //	Send(":Read?")	-> Executing read we are doing:  Abort, init and fetch? -> init is not realized and there is an error -213. 
 	//we make it easier and faster this way
 	Send (":abort;:fetch?")
-	//Send (":Measure:" + type + "?") -> Realize Abort:conf<func>:read? taking more time 
+	//Send (":Measure:" + type + "?") -> Realize Abort:conf<func>:read? -> It takes more time 
 	
 	return Listen_Variable()
 end
 
-//This function is needed becouse the multimeter takes some miliseconds while changing the measuring mode
+//This function is needed becouse the multimeter takes some miliseconds while it changes the measuring mode
 Function PrepareFaster (mode, nplc)
 	variable mode, nplc
 	string type
@@ -607,6 +615,7 @@ Function PrepareFaster (mode, nplc)
 	endif	
 	Send (":sens:func '" + type + "';")	
 	Send (":sens:" + type + ":nplc " + num2str(nplc) + ";")	
-	delay (1000)	//To wait for the changed mode, necesary the first time there's a change in nplc or mode.
+	delay (1000)	//1 sec to wait for the changed mode, necesary the first time there's a change in nplc or mode
 end
 
+//Luis Martínez de Velasco Sánchez-Tembleque
