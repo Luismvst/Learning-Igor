@@ -615,3 +615,4 @@ Function PrepareFaster (mode, nplc)
 	delay (1000)	//1 sec to wait for the changed mode, necesary the first time there's a change in nplc or mode
 end
 
+//Luis Martínez de Velasco Sánchez-Tembleque
