@@ -3,8 +3,9 @@
 #include <FilterDialog> menus=0
 #include "gpibcom"
 <<<<<<< HEAD
-=======
 //#include "mainIIIV_v3.1c"
+=======
+
 >>>>>>> Mult2000Faster
 
 Menu "Multi2000"
