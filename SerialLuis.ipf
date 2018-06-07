@@ -15,6 +15,7 @@ Function init_SPort()
 	endif
 	//	DoIExist()
 	SetDataFolder root:
+	//VFamos a tener que cambiar todo esto de los path
 	NewDataFolder /O/S MagicBox
 	string/G Device = "MagicBox"
 	//IF ERROR/ALERT: comment aux and com, discoment COM and select the com manually (i.e. "COM1")	
