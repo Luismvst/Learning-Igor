@@ -10,27 +10,26 @@ Function init_SPort()
 	if (ItemsinList (WinList("SerialPanel", ";", "")) > 0)
 		SetDrawLayer /W=SerialPanel Progfront
 		DoWindow /F SerialPanel
-		print "Brought to the front"
 		return 0
 	endif
-	//	DoIExist()
-	SetDataFolder root:
-	//VFamos a tener que cambiar todo esto de los path
-	NewDataFolder /O/S MagicBox
-	string/G Device = "MagicBox"
+	DFRef saveDFR=GetDataFolderDFR()
+	string path = "root:SerialLuis"
+	if(!DatafolderExists(path))
+		genDFolders(path)
+		string/G root:SerialLuis:com 
+		string/G root:SerialLuis:Device
+		string/G root:SerialLuis:Name
+	endif
 	//IF ERROR/ALERT: comment aux and com, discoment COM and select the com manually (i.e. "COM1")	
 	string aux = getSerialPort()	
-	string/G com = cleanedPort(aux)
-	//string/G COM = "COM1"
-	string /G name = " "
-	init_OpenSerial (com, Device)	//Function engaged 
+	string com = cleanedPort(aux)
+	print com
 	Serial_Panel()	//Plot the Panel
 	SetDataFolder root:
 End
 
-
 Function/S cleanedPort(aux)
-//This is becouse the getSerialPort() introduce the ; and some extra ports normally
+//This is becouse the getSerialPort() introduce some extra ports normally. Trying to avoid that.
 	string aux
 	string chaincom = ""
 	variable i
@@ -55,6 +54,7 @@ Function/S cleanedPort(aux)
 	endfor
 end
 
+//It crashes with LedsController function. Uncomment when needed
 Function init_OpenSerial (com, Device)
 
 	string com, Device
@@ -101,45 +101,37 @@ Function /S getSerialPort()
 	return ports
 end
 
-Function checkMagicBoxInit()
+Function Send()
 	
-	SetDataFolder root:MagicBox:
+	SetDataFolder root:SerialLuis:
 	svar com
 	svar Device
 	svar name
-	
 	string cmd = ""
 	
 	string command = name
+	//Future checkboxes to this 
 	command = upperstr(command)	
-	command = trimstring (command)
+	//command = trimstring (command) //White space are eliminated 
 	name = command
-	variable i
-	variable longitud = strlen (command)
 	//Opening Serial Port -> Optional, not really needed. Ensure Port's working well
+	VDTOpenPort2 com
 	cmd = "VDTOpenPort2 " + com
-	Execute cmd
-	for (i = 0; i<longitud; i+=1)
-		VDTWrite2 command[i]
-		dalay (5)		//Delay dont really needed, but the PIC and serialport gets a better syncronization
-		//I dont know why i need to close the serial-port to ensure the character is sent
-		cmd = "VDTClosePort2 " + com
-		Execute cmd 
-		if (V_VDT != 1)
-			string str = "Reestart the device and the program"
-			DoAlert /T="Unable to write in serial port", 0, str
-			Abort  "Execution aborted.... Restart IGOR"
-		endif
-	endfor
-	
-	
-//Wonderful String : abzcdzefzghzijzklzmnzopzazbzczdzezfzgzhzizjzkzlzmznzozpzaeimzbfjn
-//Wonderful string v2.0 : bczdczhjzgabpghjghzialo
-//The commented things are good. Trying shit things of vdtgetstatus
-//VDTGetStatus2 0,1,1
-//	print V_VDT
+	//Execute cmd
+	VDTWrite2 name
+	cmd = "VDTWrite2 " + name
+	//Execute cmd
+	VDTClosePort2 com
+	cmd = "VDTClosePort2 " + com
+	//Execute cmd 
+	if (V_VDT != 1)
+		string str = "Reestart the device and the program"
+		DoAlert /T="Unable to write in serial port", 0, str
+		Abort  "Execution aborted.... Restart IGOR"
+	endif
 end
 
+//The same as delay but we dont want the function crashes
 Function dalay(ms)
 	Variable ms
  	Variable delay = ms*1000
@@ -148,18 +140,84 @@ Function dalay(ms)
 	while(StopMSTimer(-2) - start < delay)
 end
 
-Function ButtonProc(ba) : ButtonControl
+Function Exit ()
+	SetDataFolder root:MagicBox:
+	svar com
+	string cmd
+	cmd = "VDTClosePort2 " + com
+	Execute cmd
+	killwindow SerialPanel
+	SetDataFolder root:
+end
+
+Function SetVarProc_SerialLuis(sva) : SetVariableControl
+	STRUCT WMSetVariableAction &sva
+	if (sva.eventCode == 7 )
+		return 0
+	endif
+	switch( sva.eventCode )
+	//EventCode 7 -> Pinchar
+		case 1: // mouse up
+		case 2: // Enter key
+			Send()
+		case 3: // Live update
+			Variable dval = sva.dval
+			String sval = sva.sval
+			break
+		case -1: // control being killed
+			break
+	endswitch
+
+	return 0
+End
+
+
+Function PopMenuProc_SerialLuis(pa) : PopupMenuControl
+	STRUCT WMPopupAction &pa
+
+	switch( pa.eventCode )
+		case 2: // mouse up
+			Variable popNum = pa.popNum
+			String popStr = pa.popStr
+			strswitch (pa.ctrlname)
+				svar Device = root:SerialLuis:Device
+				svar com = root:SerialLuis:com
+				case "popup0":									
+					Device = pa.popStr				
+				break
+				case "popup1":
+					com = "COM" + num2str(popNum)	
+					if ( stringmatch ( com, "USB*") )
+						string smsg = "USB will be implemented soon.\n"
+						DoAlert /T="Unable to open the program" 1, smsg
+					endif
+				break
+			endswitch
+			break
+		case -1: // control being killed
+			break
+	endswitch
+
+	return 0
+End
+
+Function ButtonProc_SerialLuis(ba) : ButtonControl
 	STRUCT WMButtonAction &ba
 
 	switch( ba.eventCode )
 		case 2: // mouse up
 			strswitch (ba.ctrlName)// click code here
 				case "button0":
-					CheckMagicBoxInit()
-					break
+					Send()
+				break
 				case "button1":
 					Exit()
-					break					
+				break	
+				case "button2":
+					svar com = root:SerialLuis:com
+					svar Device = root:SerialLuis:Device
+					init_OpenSerial(	com, Device)
+				break		
 			endswitch
 			break
 		case -1: // control being killed
@@ -171,41 +229,20 @@ End
 
 Function Serial_Panel() : Panel
 	PauseUpdate; Silent 1		// building window...
-	NewPanel /W=(549,144,849,344) /N=SerialPanel as "CommandPanel"
-	Button button0,pos={94.00,118.00},size={81.00,43.00},proc=ButtonProc,title="Send"
-	Button button1,pos={246.00,176.00},size={50.00,20.00},proc=ButtonProc, title="Exit"
-	SetVariable setvar0,pos={53.00,54.00},size={158.00,18.00},title="Command"
-	SetVariable setvar0, value = root:MagicBox:name
-	TitleBox title0,pos={226.00,10.00},size={64.00,22.00}, variable = root:MagicBox:sports
+	NewPanel /W=(928,56,1228,192) as "Hyper-Terminal by Luis"
+	DoWindow /C SerialPanel
+	Button button0,pos={228.00,102.00},size={62.00,26.00},proc=ButtonProc_SerialLuis,title="Send"
+	Button button0,help={"Press Enter to Send"},fColor=(52428,52425,1)
+	Button button1,pos={6.00,112.00},size={50.00,20.00},proc=ButtonProc,title="Exit"
+	Button button1,fColor=(26411,1,52428)
+	Button button2,pos={242.00,21.00},size={51.00,20.00},proc=ButtonProc_SerialLuis,title="Init"
+	Button button2,fColor=(65535,0,0)
+	SetVariable setvar0,pos={14.00,59.00},size={269.00,18.00},proc=SetVarProc_SerialLuis,title="Command"
+	SetVariable setvar0,value= root:SerialLuis:name
+	PopupMenu popup0,pos={12.00,21.00},size={132.00,19.00},proc=PopMenuProc_SerialLuis,title="Device"
+	PopupMenu popup0,mode=1,popvalue="LedController",value= #"\"LedController;MagicBox\""
+	PopupMenu popup1,pos={152.00,21.00},size={81.00,19.00},proc=PopMenuProc_SerialLuis,title="Port"
+	PopupMenu popup1,mode=1,popvalue="COM1",value= #"\"COM1;COM2;COM3;COM4;COM5;COM6;COM7;COM8;USB\""
 End
 
-//Not needed. We can do DoWindow/F and bring to the front the existing panel 
-//Instead of killing it 
-//Function DoIExist()
-//	if (WinType("SerialPanel") == 7)
-//		killwindow SerialPanel
-//		print "Killed CommandPanel"
-//	endif
-//end
 
-Function Exit ()
-	
-	SetDataFolder root:MagicBox:
-	svar com
-	string cmd
-	cmd = "VDTClosePort2 " + com
-	Execute cmd
-	killwindow SerialPanel
-	SetDataFolder root:
-end
-
-Window SerialPanel() : Panel
-	PauseUpdate; Silent 1		// building window...
-	NewPanel /W=(549,144,849,344) as "CommandPanel"
-	ShowTools/A
-	Button button0,pos={94.00,118.00},size={81.00,43.00},proc=ButtonProc,title="Send"
-	Button button1,pos={246.00,176.00},size={50.00,20.00},proc=ButtonProc,title="Exit"
-	SetVariable setvar0,pos={53.00,54.00},size={158.00,18.00},title="Command"
-	SetVariable setvar0,value= name
-	
-EndMacro
