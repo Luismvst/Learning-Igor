@@ -114,20 +114,20 @@ Function Send()
 	//command = trimstring (command) //White space are eliminated 
 	name = command
 	//Opening Serial Port -> Optional, not really needed. Ensure Port's working well
-	VDTOpenPort2 com
+	//VDTOpenPort2 com
 	cmd = "VDTOpenPort2 " + com
-	//Execute cmd
+	Execute cmd
 	VDTWrite2 name
 	cmd = "VDTWrite2 " + name
 	//Execute cmd
-	VDTClosePort2 com
+	//VDTClosePort2 com
 	cmd = "VDTClosePort2 " + com
 	//Execute cmd 
-	if (V_VDT != 1)
-		string str = "Reestart the device and the program"
-		DoAlert /T="Unable to write in serial port", 0, str
-		Abort  "Execution aborted.... Restart IGOR"
-	endif
+//	if (V_VDT != 1)
+//		string str = "Reestart the device and the program"
+//		DoAlert /T="Unable to write in serial port", 0, str
+//		Abort  "Execution aborted.... Restart IGOR"
+//	endif
 end
 
 //The same as delay but we dont want the function crashes
