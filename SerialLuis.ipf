@@ -25,7 +25,6 @@ Function init_SPort()
 	string com = cleanedPort(aux)
 	print com
 	Serial_Panel()	//Plot the Panel
-	SetDataFolder root:
 End
 
 Function/S cleanedPort(aux)
@@ -55,39 +54,39 @@ Function/S cleanedPort(aux)
 end
 
 //It crashes with LedsController function. Uncomment when needed
-Function init_OpenSerial (com, Device)
-
-	string com, Device
-	string cmd, DeviceCommands
-	//string reply
-	variable flag
-	string/G sports=getSerialPort()
-		//print sports
-	if(StringMatch(Device,"MagicBox"))	//It looks for the Word in the DeviceStr
-		DeviceCommands=" baud=1200, stopbits=1, databits=8, parity=0"
-	elseif (StringMatch(Device, "LedController"))
-		DeviceCommands=" baud=9600, stopbits=1, databits=8, parity=0"
-	endif
-		// is the port available in the computer?
-	if (WhichListItem(com,sports)!=-1)
-		cmd = "VDT2 /P=" + com + DeviceCommands
-		Execute cmd
-		cmd = "VDTOperationsPort2 " + com
-		Execute cmd
-		cmd = "VDTOpenPort2 " + com
-		Execute cmd
-		flag = 1
-	else
-		//Error Message with an OK button
-		string smsg="Problem openning port:" +com+". Try the following:\r"
-		smsg+="0.- TURN IT ON!\r"
-		smsg+="1.- Verify is not being used by another program\r"
-		smsg+="2.- Verify the PORT is available in Device Manager (Ports COM). If not, rigth-click and scan hardware changes or disable and enable it.\r"
-		DoAlert /T="Unable to open Serial Port" 0, smsg
-		Abort "Execution aborted.... Restart IGOR"
-	endif
-	return flag 
-end
+//Function init_OpenSerial (com, Device)
+//
+//	string com, Device
+//	string cmd, DeviceCommands
+//	//string reply
+//	variable flag
+//	string/G sports=getSerialPort()
+//		//print sports
+//	if(StringMatch(Device,"MagicBox"))	//It looks for the Word in the DeviceStr
+//		DeviceCommands=" baud=1200, stopbits=1, databits=8, parity=0"
+//	elseif (StringMatch(Device, "LedController"))
+//		DeviceCommands=" baud=9600, stopbits=1, databits=8, parity=0"
+//	endif
+//		// is the port available in the computer?
+//	if (WhichListItem(com,sports)!=-1)
+//		cmd = "VDT2 /P=" + com + DeviceCommands
+//		Execute cmd
+//		cmd = "VDTOperationsPort2 " + com
+//		Execute cmd
+//		cmd = "VDTOpenPort2 " + com
+//		Execute cmd
+//		flag = 1
+//	else
+//		//Error Message with an OK button
+//		string smsg="Problem openning port:" +com+". Try the following:\r"
+//		smsg+="0.- TURN IT ON!\r"
+//		smsg+="1.- Verify is not being used by another program\r"
+//		smsg+="2.- Verify the PORT is available in Device Manager (Ports COM). If not, rigth-click and scan hardware changes or disable and enable it.\r"
+//		DoAlert /T="Unable to open Serial Port" 0, smsg
+//		Abort "Execution aborted.... Restart IGOR"
+//	endif
+//	return flag 
+//end
 
 //Different from getSerialPorts() (PROCEDURE serialcom.ipf)
 Function /S getSerialPort()
@@ -140,14 +139,12 @@ Function dalay(ms)
 	while(StopMSTimer(-2) - start < delay)
 end
 
-Function Exit ()
-	SetDataFolder root:MagicBox:
-	svar com
+Function Exit_SerialLuis ()
+	svar com = root:SerialLuis:com
 	string cmd
 	cmd = "VDTClosePort2 " + com
 	Execute cmd
 	killwindow SerialPanel
-	SetDataFolder root:
 end
 
 Function SetVarProc_SerialLuis(sva) : SetVariableControl
@@ -179,13 +176,13 @@ Function PopMenuProc_SerialLuis(pa) : PopupMenuControl
 		case 2: // mouse up
 			Variable popNum = pa.popNum
 			String popStr = pa.popStr
-			strswitch (pa.ctrlname)
-				svar Device = root:SerialLuis:Device
-				svar com = root:SerialLuis:com
-				case "popup0":									
-					Device = pa.popStr				
+			strswitch (pa.ctrlname)				
+				case "popup0":
+					svar Device = root:SerialLuis:Device							
+					Device = popStr				
 				break
 				case "popup1":
+					svar com = root:SerialLuis:com
 					com = "COM" + num2str(popNum)	
 					if ( stringmatch ( com, "USB*") )
 						string smsg = "USB will be implemented soon.\n"
@@ -211,7 +208,7 @@ Function ButtonProc_SerialLuis(ba) : ButtonControl
 					Send()
 				break
 				case "button1":
-					Exit()
+					Exit_SerialLuis()
 				break	
 				case "button2":
 					svar com = root:SerialLuis:com
@@ -229,11 +226,11 @@ End
 
 Function Serial_Panel() : Panel
 	PauseUpdate; Silent 1		// building window...
-	NewPanel /W=(928,56,1228,192) as "Hyper-Terminal by Luis"
+	NewPanel /W=(928,56,1228,192) as "Hyper-Terminal"
 	DoWindow /C SerialPanel
 	Button button0,pos={228.00,102.00},size={62.00,26.00},proc=ButtonProc_SerialLuis,title="Send"
 	Button button0,help={"Press Enter to Send"},fColor=(52428,52425,1)
-	Button button1,pos={6.00,112.00},size={50.00,20.00},proc=ButtonProc,title="Exit"
+	Button button1,pos={6.00,112.00},size={50.00,20.00},proc=ButtonProc_SerialLuis,title="Exit"
 	Button button1,fColor=(26411,1,52428)
 	Button button2,pos={242.00,21.00},size={51.00,20.00},proc=ButtonProc_SerialLuis,title="Init"
 	Button button2,fColor=(65535,0,0)
